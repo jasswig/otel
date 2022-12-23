@@ -1,0 +1,44 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+exporters:
+  logging:
+    loglevel: debug
+  
+  jaeger:
+    endpoint: jaeger:14250
+    tls:
+      insecure: true
+  
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+  otlp/elastic: 
+    endpoint: "<apm-server-url>:443"
+    headers:
+      # Elastic APM Server secret token
+      Authorization: "Bearer <bearer token>" 
+
+  otlp/2:
+    endpoint: data-prepper:21890
+    tls:
+      insecure: true
+
+processors:
+  batch:
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [jaeger, otlp/elastic, otlp/2]
+      processors: [batch]
+    metrics:
+      receivers: [otlp]
+      exporters: [logging]
+      processors: [batch]
+    logs:
+      receivers: [otlp]
+      exporters: [logging]
+      processors: [batch]

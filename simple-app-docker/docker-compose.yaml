@@ -137,6 +137,8 @@ services:
       - 9600:9600 # required for Performance Analyzer
     networks:
       - otel
+    volumes:
+      - opensearch-data1:/usr/share/opensearch/data 
 
   dashboards:
     image: opensearchproject/opensearch-dashboards:2
@@ -151,6 +153,67 @@ services:
       - opensearch
     networks:
       - otel
+  
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.3
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - 9201:9200
+      - 9300:9300
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - otel
+    volumes:
+      - elasticsearch-data1:/usr/share/opensearch/data 
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:7.17.3
+    container_name: apm-server
+    networks:
+     - otel
+    ports:
+     - "8200:8200"
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    depends_on:
+      - elasticsearch
+      
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.3
+    container_name: kibana
+    ports:
+      - 5602:5601
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    depends_on:
+      - elasticsearch
+      - apm-server
+    networks:
+      - otel
+    volumes:
+      - kibanadata:/usr/share/kibana/data
+
+
+volumes:
+  opensearch-data1: 
+    driver: local
+  elasticsearch-data1:
+    driver: local
+  kibanadata:
+    driver: local
 
 networks:
   otel:

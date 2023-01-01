@@ -1,0 +1,49 @@
+version: "3.4"
+services:
+
+  find-square: 
+    container_name: ja-find-square
+    image: ja-find-square
+    build: 
+      context: ./find-square
+    command: >
+      sh -c
+        "yum install -y wget &&
+        wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar -P /code/ &&
+        java -javaagent:/code/opentelemetry-javaagent.jar -jar target/sparkexample-jar-with-dependencies.jar"
+    environment:
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=java-agent-find-sq
+    ports:
+      - 4567:4567
+    networks:
+      - otel
+
+  otel-collector: 
+    container_name: otel-collector
+    restart: always
+    image: otel/opentelemetry-collector:latest
+    volumes:
+    - ./collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml 
+    networks:
+      - otel
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    # ports:
+    #   - "8888:8888"
+    #   - "9464:9464"
+    depends_on:
+      - jaeger
+
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14250"
+    networks:
+      - otel
+
+networks:
+  otel:
+    driver: bridge

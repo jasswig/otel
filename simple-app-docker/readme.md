@@ -2,8 +2,10 @@ http://localhost:5001/docs
 
 https://Replace-with-valid-url/app/apm/services?rangeFrom=now-15m&rangeTo=now&comparisonEnabled=true&comparisonType=day
 
-http://localhost:16686/search
+(jaeger) http://localhost:16686/search
 
-http://localhost:5601/
+dashboard (opensearch) http://localhost:5601/
+
+kibana (elasticsearch-apm) http://localhost:5002/
 
 ![ServiceMap](./servicemap.png)
